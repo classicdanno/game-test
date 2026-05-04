@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matchup — Day 47</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #141416;
+    --bg3: #1c1c1f;
+    --bg4: #242428;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0ede8;
+    --text2: #888880;
+    --text3: #555550;
+    --accent: #e8d5a0;
+    --accent2: #c4a96e;
+    --green: #7ec47e;
+    --green-bg: rgba(126,196,126,0.1);
+    --red: #e07070;
+    --red-bg: rgba(224,112,112,0.1);
+    --blue: #7eb0e0;
+    --blue-bg: rgba(126,176,224,0.1);
+    --amber: #e0b870;
+    --amber-bg: rgba(224,184,112,0.1);
+    --r: 6px;
+    --r2: 10px;
+    --r3: 14px;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px 80px;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 600px 400px at 70% 10%, rgba(232,213,160,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 600px at 10% 80%, rgba(126,176,224,0.03) 0%, transparent 70%);
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .screen { display: none; animation: fadeUp 0.25s ease; }
+  .screen.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+  }
+  .day-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .page-title {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .streak-box {
+    text-align: right;
+  }
+  .streak-num {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .streak-lbl {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Constraint banner */
+  .constraint {
+    border: 0.5px solid rgba(224,184,112,0.3);
+    background: rgba(224,184,112,0.06);
+    border-radius: var(--r2);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--amber);
+    font-family: var(--mono);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .constraint::before {
+    content: '!';
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--amber);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r3);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  /* Two-col grid */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .two-col .card { margin-bottom: 0; }
+
+  /* Opponent player row */
+  .opp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .opp-row:last-child { border-bottom: none; }
+  .opp-idx { font-family: var(--mono); font-size: 10px; color: var(--text3); width: 12px; }
+  .opp-name { font-size: 13px; font-weight: 400; flex: 1; color: var(--text); }
+  .opp-pos { font-family: var(--mono); font-size: 10px; color: var(--text3); width: 22px; }
+
+  .pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+  .pill-blue  { background: var(--blue-bg);  color: var(--blue);  border: 0.5px solid rgba(126,176,224,0.2); }
+  .pill-red   { background: var(--red-bg);   color: var(--red);   border: 0.5px solid rgba(224,112,112,0.2); }
+  .pill-green { background: var(--green-bg); color: var(--green); border: 0.5px solid rgba(126,196,126,0.2); }
+  .pill-amber { background: var(--amber-bg); color: var(--amber); border: 0.5px solid rgba(224,184,112,0.2); }
+  .pill-gray  { background: rgba(255,255,255,0.04); color: var(--text2); border: 0.5px solid var(--border2); }
+
+  /* Tendencies */
+  .tend-item {
+    font-size: 12px;
+    font-family: var(--mono);
+    line-height: 2;
+    color: var(--text2);
+  }
+  .tend-item.pos { color: var(--green); }
+  .tend-item.neg { color: var(--red); }
+
+  /* Sliders */
+  .slider-wrap { margin-bottom: 18px; }
+  .slider-wrap:last-child { margin-bottom: 0; }
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+  .slider-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.02em;
+  }
+  .slider-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 20px;
+    text-align: right;
+    transition: color 0.15s;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--bg4);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg2);
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    border: 2px solid var(--bg2);
+  }
+
+  /* Budget bar */
+  .budget-wrap { margin-top: 18px; }
+  .budget-track {
+    height: 3px;
+    background: var(--bg4);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 5px;
+  }
+  .budget-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.15s, background 0.15s;
+  }
+  .budget-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  /* Lineup / stat bars */
+  .lineup-names {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+    line-height: 2.1;
+    margin-bottom: 14px;
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .stat-name { font-size: 11px; color: var(--text3); width: 100px; font-family: var(--mono); }
+  .stat-track {
+    flex: 1;
+    height: 3px;
+    background: var(--bg4);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .stat-fill { height: 100%; border-radius: 2px; transition: width 0.2s; }
+  .stat-grade {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    width: 20px;
+    text-align: right;
+  }
+  .g-A { color: var(--green); }
+  .g-B { color: var(--blue); }
+  .g-C { color: var(--amber); }
+  .g-D { color: var(--red); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-family: var(--sans);
+    font-weight: 500;
+    border-radius: var(--r2);
+    cursor: pointer;
+    border: 0.5px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    transition: background 0.12s, border-color 0.12s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { background: var(--bg3); border-color: var(--border2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary {
+    background: var(--accent);
+    color: #0d0d0f;
+    border-color: transparent;
+    font-weight: 500;
+  }
+  .btn-primary:hover { background: #f0e0b0; }
+  .btn-full { width: 100%; }
+
+  /* Score display */
+  .score-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 24px 0 20px;
+  }
+  .score-side { text-align: center; }
+  .score-num {
+    font-family: var(--mono);
+    font-size: 44px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .score-num.winner { color: var(--accent); }
+  .score-num.loser  { color: var(--text3); }
+  .score-lbl { font-size: 10px; font-family: var(--mono); color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .score-sep { font-family: var(--mono); font-size: 24px; color: var(--border2); }
+
+  /* Moments */
+  .moment {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text2);
+  }
+  .moment:last-child { border-bottom: none; padding-bottom: 0; }
+  .moment-icon { width: 18px; flex-shrink: 0; margin-top: 1px; }
+  .moment-icon.good::before  { content:'↑'; color: var(--green); font-family: var(--mono); }
+  .moment-icon.bad::before   { content:'↓'; color: var(--red);   font-family: var(--mono); }
+  .moment-icon.neutral::before { content:'→'; color: var(--text3); font-family: var(--mono); }
+
+  /* Tradeoff */
+  .tradeoff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .tradeoff-box {
+    border-radius: var(--r);
+    padding: 12px 14px;
+  }
+  .tradeoff-gained { background: var(--green-bg); border: 0.5px solid rgba(126,196,126,0.2); }
+  .tradeoff-lost   { background: var(--red-bg);   border: 0.5px solid rgba(224,112,112,0.2); }
+  .tradeoff-lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tradeoff-gained .tradeoff-lbl { color: var(--green); }
+  .tradeoff-lost .tradeoff-lbl   { color: var(--red); }
+  .tradeoff-item { font-size: 12px; line-height: 1.9; }
+  .tradeoff-gained .tradeoff-item { color: var(--green); }
+  .tradeoff-lost .tradeoff-item   { color: var(--red); }
+
+  .deciding {
+    background: var(--bg3);
+    border-radius: var(--r);
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+  .deciding strong { color: var(--accent); font-weight: 500; }
+
+  /* One-change grid */
+  .one-change-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .one-change-grid .btn { font-size: 12px; font-family: var(--mono); padding: 8px 12px; }
+
+  /* Result headline */
+  .result-headline {
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+  .result-headline.win { color: var(--green); }
+  .result-headline.loss { color: var(--red); }
+  .result-vs { font-size: 12px; color: var(--text3); font-family: var(--mono); margin-bottom: 20px; }
+
+  /* Section heading between cards */
+  .section-sep {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin: 20px 0 8px;
+  }
+
+  @media (max-width: 480px) {
+    .two-col { grid-template-columns: 1fr; }
+    .score-num { font-size: 36px; }
+    body { padding: 24px 12px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- BUILD SCREEN -->
+  <div id="s-build" class="screen active">
+    <div class="header">
+      <div>
+        <div class="day-label">Day 47 — Sunday</div>
+        <div class="page-title">Beat the Suns</div>
+      </div>
+      <div class="streak-box">
+        <div class="streak-num">3</div>
+        <div class="streak-lbl">streak</div>
+      </div>
+    </div>
+
+    <div class="constraint">
+      Today: your lineup cannot include a center taller than 6'10"
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-label">Opponent starting five</div>
+        <div class="opp-row">
+          <div class="opp-idx">1</div>
+          <div class="opp-name">C. Paul</div>
+          <div class="opp-pos">PG</div>
+          <span class="pill pill-blue">Elite IQ</span>
+        </div>
+        <div class="opp-row">
+          <div class="opp-idx">2</div>
+          <div class="opp-name">D. Booker</div>
+          <div class="opp-pos">SG</div>
+          <span class="pill pill-red">Scorer</span>
+        </div>
+        <div class="opp-row">
+          <div class="opp-idx">3</div>
+          <div class="opp-name">M. Bridges</div>
+          <div class="opp-pos">SF</div>
+          <span class="pill pill-green">Lockdown</span>
+        </div>
+        <div class="opp-row">
+          <div class="opp-idx">4</div>
+          <div class="opp-name">J. Crowder</div>
+          <div class="opp-pos">PF</div>
+          <span class="pill pill-amber">3+D</span>
+        </div>
+        <div class="opp-row">
+          <div class="opp-idx">5</div>
+          <div class="opp-name">D. Ayton</div>
+          <div class="opp-pos">C</div>
+          <span class="pill pill-gray">Weak rim</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Their tendencies</div>
+        <div class="tend-item pos">+ Elite half-court offense</div>
+        <div class="tend-item pos">+ High assist rate</div>
+        <div class="tend-item pos">+ Perimeter defense</div>
+        <div class="tend-item neg">− Weak interior defense</div>
+        <div class="tend-item neg">− Slow pace, no transition</div>
+        <div class="tend-item neg">− Poor rebounding</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Shape your team</div>
+
+      <div class="slider-wrap">
+        <div class="slider-header">
+          <span class="slider-name">Shooting</span>
+          <span class="slider-val" id="v-shoot" style="color:var(--blue);">7</span>
+        </div>
+        <input type="range" id="s-shoot" min="1" max="10" value="7" step="1">
+      </div>
+
+      <div class="slider-wrap">
+        <div class="slider-header">
+          <span class="slider-name">Defense</span>
+          <span class="slider-val" id="v-def" style="color:var(--green);">4</span>
+        </div>
+        <input type="range" id="s-def" min="1" max="10" value="4" step="1">
+      </div>
+
+      <div class="slider-wrap">
+        <div class="slider-header">
+          <span class="slider-name">Size &amp; rebounding</span>
+          <span class="slider-val" id="v-size" style="color:var(--amber);">3</span>
+        </div>
+        <input type="range" id="s-size" min="1" max="10" value="3" step="1">
+      </div>
+
+      <div class="slider-wrap">
+        <div class="slider-header">
+          <span class="slider-name">Pace &amp; athleticism</span>
+          <span class="slider-val" id="v-pace" style="color:var(--text2);">6</span>
+        </div>
+        <input type="range" id="s-pace" min="1" max="10" value="6" step="1">
+      </div>
+
+      <div class="budget-wrap">
+        <div class="budget-track">
+          <div class="budget-fill" id="budget-fill" style="width:100%;"></div>
+        </div>
+        <div class="budget-meta">
+          <span>team budget</span>
+          <span id="budget-txt">20 / 20</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Your generated lineup</div>
+      <div class="lineup-names" id="lineup-preview"></div>
+      <div class="stat-row">
+        <div class="stat-name">shooting</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-shoot" style="background:var(--blue);"></div></div>
+        <div class="stat-grade" id="g-shoot"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-name">defense</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-def" style="background:var(--green);"></div></div>
+        <div class="stat-grade" id="g-def"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-name">size + boards</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-size" style="background:var(--amber);"></div></div>
+        <div class="stat-grade" id="g-size"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-name">pace</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-pace" style="background:var(--text2);"></div></div>
+        <div class="stat-grade" id="g-pace"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="simulate()">Simulate matchup →</button>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="s-result" class="screen">
+    <div class="header">
+      <div>
+        <div class="day-label">Day 47 — Result</div>
+        <div class="result-headline" id="result-headline">You won</div>
+        <div class="result-vs">vs. Phoenix Suns</div>
+      </div>
+      <div class="streak-box">
+        <div class="streak-num" id="result-streak">3</div>
+        <div class="streak-lbl">streak</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="score-wrap">
+        <div class="score-side">
+          <div class="score-num" id="my-score">114</div>
+          <div class="score-lbl">Your team</div>
+        </div>
+        <div class="score-sep">—</div>
+        <div class="score-side">
+          <div class="score-num" id="opp-score">108</div>
+          <div class="score-lbl">Phoenix</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Key moments</div>
+      <div id="moments-container"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">What you traded</div>
+      <div class="tradeoff-grid">
+        <div class="tradeoff-box tradeoff-gained">
+          <div class="tradeoff-lbl">Gained</div>
+          <div id="gained-items"></div>
+        </div>
+        <div class="tradeoff-box tradeoff-lost">
+          <div class="tradeoff-lbl">Sacrificed</div>
+          <div id="lost-items"></div>
+        </div>
+      </div>
+      <div class="deciding" id="deciding-factor"></div>
+    </div>
+
+    <div class="section-sep">Make one change &amp; rerun</div>
+    <div class="one-change-grid" id="one-change-btns"></div>
+
+    <button class="btn btn-full" onclick="goBack()">← Rebuild from scratch</button>
+  </div>
+
+</div>
+
+<script>
+const TOTAL = 20;
+const sliders = ['shoot','def','size','pace'];
+
+const lineups = {
+  shoot: ['S. Curry (PG)','K. Thompson (SG)','K. Durant (SF)','D. Green (PF)','K. Looney (C)'],
+  def:   ['M. Smart (PG)','J. Holiday (SG)','K. Leonard (SF)','D. Green (PF)','R. Gobert (C)'],
+  size:  ['D. Rose (PG)','G. Antetokounmpo (SG)','P. George (SF)','A. Davis (PF)','N. Jokic (C)'],
+  pace:  ['R. Westbrook (PG)','J. Morant (SG)','Z. Williamson (SF)','B. Adebayo (PF)','B. Brown (C)']
+};
+
+function getVal(id) { return parseInt(document.getElementById('s-' + id).value); }
+
+function grade(v) {
+  if (v >= 8) return 'A';
+  if (v >= 6) return 'B';
+  if (v >= 4) return 'C';
+  return 'D';
+}
+
+function updateUI() {
+  const vals = {};
+  sliders.forEach(id => { vals[id] = getVal(id); });
+
+  const total = sliders.reduce((s, id) => s + vals[id], 0);
+  const pct = Math.min(total / TOTAL, 1);
+  document.getElementById('budget-fill').style.width = Math.round(pct * 100) + '%';
+  document.getElementById('budget-fill').style.background = total > TOTAL ? 'var(--red)' : 'var(--accent)';
+  document.getElementById('budget-txt').textContent = total + ' / ' + TOTAL;
+
+  sliders.forEach(id => {
+    document.getElementById('v-' + id).textContent = vals[id];
+  });
+
+  const dominant = sliders.slice().sort((a, b) => vals[b] - vals[a])[0];
+  document.getElementById('lineup-preview').innerHTML = lineups[dominant].join('<br>');
+
+  sliders.forEach(id => {
+    const v = vals[id];
+    const g = grade(v);
+    document.getElementById('bar-' + id).style.width = Math.round(v / 10 * 100) + '%';
+    const el = document.getElementById('g-' + id);
+    el.textContent = g;
+    el.className = 'stat-grade g-' + g;
+  });
+}
+
+sliders.forEach(id => {
+  document.getElementById('s-' + id).addEventListener('input', updateUI);
+});
+updateUI();
+
+function simulate() {
+  const s = getVal('shoot'), d = getVal('def'), z = getVal('size'), p = getVal('pace');
+  const os = 5, od = 7, oz = 4, op = 3;
+
+  const myScore  = 95 + Math.round(s * 1.8 + p * 1.2 - od * 0.9 + (10 - z) * 0.3);
+  const oppScore = 95 + Math.round(os * 1.8 + op * 1.2 - d * 0.9 + (10 - oz) * 0.3);
+  const win = myScore > oppScore;
+
+  document.getElementById('my-score').textContent = myScore;
+  document.getElementById('opp-score').textContent = oppScore;
+  document.getElementById('my-score').className  = 'score-num ' + (win ? 'winner' : 'loser');
+  document.getElementById('opp-score').className = 'score-num ' + (!win ? 'winner' : 'loser');
+
+  const hl = document.getElementById('result-headline');
+  hl.textContent = win ? 'You won' : 'You lost';
+  hl.className = 'result-headline ' + (win ? 'win' : 'loss');
+
+  const moments = [];
+  if (s >= 7) moments.push({ type: 'good', text: 'Your shooters feasted on Phoenix\'s weak interior coverage — five made threes in the first half opened up driving lanes all game.' });
+  if (p >= 6) moments.push({ type: 'good', text: 'You pushed the pace in transition, scoring 22 fast-break points before Phoenix could get set in their half-court defense.' });
+  if (z <= 4) moments.push({ type: 'bad',  text: 'Ayton had 14 second-chance points. Your undersized front court couldn\'t box out, giving Phoenix repeated extra possessions.' });
+  if (d <= 4) moments.push({ type: 'bad',  text: 'Booker got to his spots at will in the fourth — your perimeter defense had no answer for his off-screen midrange game.' });
+  if (d >= 6) moments.push({ type: 'good', text: 'You held Phoenix under 40% from three. Your perimeter pressure disrupted their usual ball movement and catch-and-shoot rhythm.' });
+  if (moments.length < 2) moments.push({ type: 'neutral', text: 'The game stayed close through three quarters, decided by execution in the final four minutes.' });
+
+  document.getElementById('moments-container').innerHTML = moments.slice(0, 3).map(m =>
+    `<div class="moment"><div class="moment-icon ${m.type}"></div><div>${m.text}</div></div>`
+  ).join('');
+
+  const gained = [], lost = [];
+  if (s >= 7) gained.push('Elite shooting'); else lost.push('Perimeter offense');
+  if (d >= 6) gained.push('Perimeter defense'); else lost.push('Defensive pressure');
+  if (z >= 6) gained.push('Interior presence'); else lost.push('Rebounding &amp; size');
+  if (p >= 7) gained.push('Fast-break scoring'); else lost.push('Transition attack');
+
+  document.getElementById('gained-items').innerHTML = gained.slice(0, 2).map(t => `<div class="tradeoff-item">+ ${t}</div>`).join('');
+  document.getElementById('lost-items').innerHTML   = lost.slice(0, 2).map(t =>   `<div class="tradeoff-item">− ${t}</div>`).join('');
+
+  let deciding = '';
+  if (!win && z <= 4) deciding = '<strong>Deciding factor:</strong> Second-chance points were the difference. Phoenix\'s 14 offensive rebounds yielded 18 extra points you couldn\'t overcome despite your shooting edge.';
+  else if (!win && d <= 4) deciding = '<strong>Deciding factor:</strong> Booker\'s 36-point fourth quarter was unstoppable. Without perimeter defense, Phoenix\'s half-court sets ran freely all night.';
+  else if (win && s >= 7) deciding = '<strong>Deciding factor:</strong> Your shooting advantage created mismatches all night. Phoenix couldn\'t cover your spacing, opening drives and easy mid-range looks.';
+  else deciding = '<strong>Deciding factor:</strong> Your pace advantage broke Phoenix\'s game plan. They never got comfortable in their preferred half-court sets.';
+  document.getElementById('deciding-factor').innerHTML = deciding;
+
+  const changes = [
+    { label: 'boost defense +2', id: 'def' },
+    { label: 'add size +2',      id: 'size' },
+    { label: 'more shooting +2', id: 'shoot' },
+    { label: 'push pace +2',     id: 'pace' }
+  ].filter(c => getVal(c.id) < 9);
+
+  document.getElementById('one-change-btns').innerHTML = changes.slice(0, 4).map(c =>
+    `<button class="btn" onclick="applyChange('${c.id}')">${c.label}</button>`
+  ).join('');
+
+  document.getElementById('s-build').classList.remove('active');
+  document.getElementById('s-result').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function applyChange(id) {
+  const slider = document.getElementById('s-' + id);
+  slider.value = Math.min(10, parseInt(slider.value) + 2);
+  updateUI();
+  goBack();
+  setTimeout(simulate, 80);
+}
+
+function goBack() {
+  document.getElementById('s-result').classList.remove('active');
+  document.getElementById('s-build').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
